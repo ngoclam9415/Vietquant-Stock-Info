@@ -1,9 +1,11 @@
 import pika
 import json
+from database import StockDBAccessor
 
 class MessageQueueParsingWorker:
     exchange_name = "streamed_data"
     def __init__(self, queue_server_ip="localhost", queue_server_port=5673):
+        self.db = StockDBAccessor("localhost", 27017)
         self.ip = queue_server_ip
         self.port = queue_server_port
         params = pika.ConnectionParameters(host=queue_server_ip, heartbeat=600,
@@ -28,7 +30,11 @@ class MessageQueueParsingWorker:
 
     def parsing_data(self, ch, method, properties, body):
         data = json.loads(body)
-        print("PARSING : {}".format(data))
+        if data["type"] == "returnData":
+            data_type = data["data"]["name"]
+            dict_data = data["data"]["data"]
+            insert_datas = self.db.creating_insert_datas(data_type, dict_data)
+            self.db.insert_many_items(insert_datas)
         ch.basic_ack(delivery_tag = method.delivery_tag)
 
 if __name__ == "__main__":
