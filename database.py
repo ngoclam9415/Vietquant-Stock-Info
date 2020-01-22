@@ -19,7 +19,6 @@ class StockDBAccessor:
 
     def creating_insert_datas(self, dict_data : "Dictionary"):
         insert_datas = []
-        # print(dict_data)
         if dict_data["type"] == "returnData":
             for key, value in dict_data["data"]["data"].items():
                 data = {}
@@ -27,7 +26,6 @@ class StockDBAccessor:
                 data["item_name"] = key
                 data["inserted_time"] = datetime.fromtimestamp(float(value.split("|")[1])/1000) if data["item_type"] == "STOCK" else \
                         datetime.strptime("{}-{}-{} {}".format(datetime.now().year, datetime.now().month, datetime.now().day, value.split("|")[-4]), "%Y-%m-%d %H:%M:%S")
-                # data["item_value"] = float(value.split("||||||")[0].split("|||")[-1].split("|")[1]) if data["item_type"] == "STOCK" else value.split("|||")[1].split("|")[0]
                 data["item_value"] = float(value.split("|")[20] if data["item_type"] == "STOCK" else value.split("|")[14])
                 data["raw_data"] = value
                 insert_datas.append(data)
@@ -39,12 +37,9 @@ class StockDBAccessor:
             data["inserted_time"] = datetime.fromtimestamp(float(value.split("|")[1])/1000) if dict_data["type"] == "STOCK" else \
                         datetime.strptime("{}-{}-{} {}".format(datetime.now().year, datetime.now().month, datetime.now().day, value.split("|")[-4]), "%Y-%m-%d %H:%M:%S")
             data["item_value"] = float(value.split("|")[20] if data["item_type"] == "STOCK" else value.split("|")[14])
-            # data["item_value"] = float(value.split("||||||")[0].split("|||")[-1].split("|")[1]) if data["item_type"] == "STOCK" else value.split("|||")[1].split("|")[0]
             data["raw_data"] = value
             insert_datas.append(data)
         return insert_datas
 
 if __name__ == "__main__":
-    # db = StockDBAccessor("localhost", 27017)
-    # print(datetime.strptime("{}-{}-{} 09:09:28".format(datetime.now().year, datetime.now().month, datetime.now().day), "%Y-%m-%d %H:%M:%S"))
     print(datetime.now().minute)
