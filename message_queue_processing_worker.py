@@ -4,14 +4,16 @@ from datetime import datetime
 import pandas as pd
 from database import StockDBAccessor
 import numpy as np
+import os
 
 class MessageQueueProcessingWorker:
     exchange_name = "streamed_data"
-    def __init__(self, queue_server_ip="localhost", queue_server_port=5673):
+    def __init__(self, queue_server_ip="localhost", queue_server_port=5673, checkpoint_name="checkpoint.csv"):
         self.ip = queue_server_ip
         self.port = queue_server_port
         self.db = StockDBAccessor("localhost", 27017)
-        self.dataframe = None
+        self.checkpoint_name = checkpoint_name
+        self.dataframe = pd.read_csv(self.checkpoint_name) if os.path.exists(self.checkpoint_name) else None
         params = pika.ConnectionParameters(host=queue_server_ip, heartbeat=600,
                                        blocked_connection_timeout=300)
         self.connection = pika.BlockingConnection(params)
@@ -48,10 +50,16 @@ class MessageQueueProcessingWorker:
             inserted_time = np.datetime64(data["inserted_time"].replace(minute=(data["inserted_time"].minute//5)*5, second=0, microsecond=0))
 
             if inserted_time not in self.dataframe["DateTime"].values:
+                if not self.dataframe.empty:
+                    self.dataframe.to_csv("checkpoint.csv")
+                self.caculate_correlation()
                 self.dataframe = self.dataframe.append({"DateTime" : inserted_time, data["item_name"] : data["item_value"]}, ignore_index=True)
             elif not self.dataframe[(self.dataframe[data["item_name"]].isnull()) & (self.dataframe["DateTime"] == inserted_time)].empty:
                 self.dataframe.loc[(self.dataframe[data["item_name"]].isnull()) & (self.dataframe["DateTime"] == inserted_time), data["item_name"]] = data["item_value"]
-                print(self.dataframe)
+
+    def caculate_correlation(self):
+        if self.dataframe is not None and "VN30F2002" in self.dataframe.columns and "VCB" in self.dataframe.columns:
+            print("CORRELATION BETWEEN VN30F2002 AND VCB : \n",self.dataframe[["VN30F2002", "VCB"]].corr(method="pearson"))
 
 if __name__ == "__main__":
     MessageQueueProcessingWorker()
