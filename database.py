@@ -17,18 +17,34 @@ class StockDBAccessor:
     def insert_many_items(self, items : "List"):
         self.stock_collection.insert_many(items)
 
-    def creating_insert_datas(self, data_type:"String", dict_data : "Dictionary"):
+    def creating_insert_datas(self, dict_data : "Dictionary"):
         insert_datas = []
-        for key, value in dict_data.items():
+        # print(dict_data)
+        if dict_data["type"] == "returnData":
+            for key, value in dict_data["data"]["data"].items():
+                data = {}
+                data["item_type"] = dict_data["data"]["name"]
+                data["item_name"] = key
+                data["inserted_time"] = datetime.fromtimestamp(float(value.split("|")[1])/1000) if data["item_type"] == "STOCK" else \
+                        datetime.strptime("{}-{}-{} {}".format(datetime.now().year, datetime.now().month, datetime.now().day, value.split("|")[-4]), "%Y-%m-%d %H:%M:%S")
+                # data["item_value"] = float(value.split("||||||")[0].split("|||")[-1].split("|")[1]) if data["item_type"] == "STOCK" else value.split("|||")[1].split("|")[0]
+                data["item_value"] = float(value.split("|")[20] if data["item_type"] == "STOCK" else value.split("|")[14])
+                data["raw_data"] = value
+                insert_datas.append(data)
+        elif dict_data["type"] != "info":
             data = {}
-            data["item_type"] = data_type
-            data["item_name"] = key
-            data["inserted_time"] = datetime.fromtimestamp(float(value.split("|")[1])/1000) if data_type == "STOCK" else datetime.now()
-            data["item_value"] = float(value.split("||||||")[0].split("|||")[-1].split("|")[1])
+            data["item_type"] = dict_data["type"]
+            value = dict_data["data"]
+            data["item_name"] = value.split("|")[3] if data["item_type"] == "STOCK" else value.split("|||")[0].split("|")[-1]
+            data["inserted_time"] = datetime.fromtimestamp(float(value.split("|")[1])/1000) if dict_data["type"] == "STOCK" else \
+                        datetime.strptime("{}-{}-{} {}".format(datetime.now().year, datetime.now().month, datetime.now().day, value.split("|")[-4]), "%Y-%m-%d %H:%M:%S")
+            data["item_value"] = float(value.split("|")[20] if data["item_type"] == "STOCK" else value.split("|")[14])
+            # data["item_value"] = float(value.split("||||||")[0].split("|||")[-1].split("|")[1]) if data["item_type"] == "STOCK" else value.split("|||")[1].split("|")[0]
+            data["raw_data"] = value
             insert_datas.append(data)
         return insert_datas
 
 if __name__ == "__main__":
-    db = StockDBAccessor("localhost", 27017)
-    db.insert_single_item("Hehe", "Oke", 1234, 1579592821958/1000)
-    
+    # db = StockDBAccessor("localhost", 27017)
+    # print(datetime.strptime("{}-{}-{} 09:09:28".format(datetime.now().year, datetime.now().month, datetime.now().day), "%Y-%m-%d %H:%M:%S"))
+    print(datetime.now().minute)

@@ -30,11 +30,8 @@ class MessageQueueParsingWorker:
 
     def parsing_data(self, ch, method, properties, body):
         data = json.loads(body)
-        if data["type"] == "returnData":
-            data_type = data["data"]["name"]
-            dict_data = data["data"]["data"]
-            insert_datas = self.db.creating_insert_datas(data_type, dict_data)
-            self.db.insert_many_items(insert_datas)
+        insert_datas = self.db.creating_insert_datas(data)
+        self.db.insert_many_items(insert_datas)
         ch.basic_ack(delivery_tag = method.delivery_tag)
 
 if __name__ == "__main__":
